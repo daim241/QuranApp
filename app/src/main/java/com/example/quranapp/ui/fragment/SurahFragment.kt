@@ -1,54 +1,32 @@
 package com.example.quranapp.ui.fragment
 
 import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.quranapp.base.BaseFragment
 import com.example.quranapp.data.database.QuranRoomDb
-import com.example.quranapp.data.service.VerseService
 import com.example.quranapp.data.model.Verses
+import com.example.quranapp.data.viewModel.SurahViewModel
 import com.example.quranapp.databinding.FragmentSurahBinding
 import com.example.quranapp.ui.adapter.SurahAdapter
 
 class SurahFragment : BaseFragment() {
+    private lateinit var viewModel: SurahViewModel
     private var _binding: FragmentSurahBinding? = null
     private val args: SurahFragmentArgs by navArgs()
     private val binding get() = _binding!!
     private var versesList = ArrayList<Verses>()
     lateinit var adapter: SurahAdapter
 
-    private val mMessageReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent) {
-            context?.let { con ->
-                val result =  QuranRoomDb.getQuranDB(con)
-                if (result != null) {
-                    getVersesList()
-
-                }
-                else {
-                    Toast.makeText(context, "No Data Found", Toast.LENGTH_LONG).show()
-                }
-                Log.d("Surah Service", "This is Broadcast")
-                LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(this) }
-        }
-    }
-
-    private fun getVersesList() {
-        versesList.addAll(localDbData())
-        adapter.notifyDataSetChanged()
-        dialogDismiss()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        viewModel = SurahViewModel(QuranRoomDb.getQuranDB(requireContext()), args.verses.toString())
     }
 
     @SuppressLint("Range")
@@ -76,26 +54,46 @@ class SurahFragment : BaseFragment() {
     @SuppressLint("SuspiciousIndentation")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        getVerses()
         binding.versesRecView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
         adapter = SurahAdapter(versesList, this@SurahFragment, requireContext())
         binding.versesRecView.adapter = adapter
         Log.d("Service", "Verses List Size is: ${versesList.size} ")
         if (versesList.isEmpty()){
-            dialogShow()
             if (localDbData().isNotEmpty()) {
-                getVersesList()
+                viewModel.quranVerses.observe(viewLifecycleOwner){ list ->
+                    Log.d("Chapter Fragment", "Data Cant Load ${list.size}")
+                    versesList.clear()
+                    versesList.addAll(list)
+                    adapter.notifyDataSetChanged()
+                }
             }
             else {
-                LocalBroadcastManager.getInstance(requireContext()).registerReceiver(mMessageReceiver,
-                    IntentFilter("localBroadcastForData").also {
-                        it.addAction(Intent.ACTION_VIEW) })
-                val intent = Intent(requireContext(), VerseService::class.java)
-                intent.putExtra("ChapID", args.verses.toString())
-                (requireContext() as AppCompatActivity).startService(intent)
+               viewModel.getVerses(args.verses.toString())
+                adapter.notifyDataSetChanged()
             }
         }
     }
 
-
+    private fun getVerses(){
+        viewModel.isLoading.observe(viewLifecycleOwner){
+            if (it)
+                Log.d("Surah Fragment", "isLoading $it")
+            if (it) {
+                dialogShow() }
+            else {
+                dialogDismiss() }
+        }
+        viewModel.isError.observe(viewLifecycleOwner){
+            if (it)
+                Toast.makeText(requireContext(), "${viewModel.errorMessage}", Toast.LENGTH_SHORT).show()
+            Log.d("Chapter Fragment", "Data Can't Load")
+        }
+        viewModel.quranVerses.observe(viewLifecycleOwner){ list ->
+            Log.d("Chapter Fragment", "Data Cant Load ${list.size}")
+            versesList.clear()
+            versesList.addAll(list)
+            adapter.notifyDataSetChanged()
+        }
+    }
 }

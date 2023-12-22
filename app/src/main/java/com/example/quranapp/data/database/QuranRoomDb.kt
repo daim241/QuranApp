@@ -8,6 +8,7 @@ import com.example.quranapp.data.database.dao.ChapterDao
 import com.example.quranapp.data.database.dao.VersesDao
 import com.example.quranapp.data.model.Chapters
 import com.example.quranapp.data.model.Verses
+import com.example.quranapp.data.viewModel.ChaptersViewModel
 
 @Database(entities = [
     Chapters::class,

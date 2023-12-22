@@ -27,4 +27,5 @@ interface ChapterDao {
 
     @Query("SELECT * FROM chapters_Table WHERE fav_id = 1")
     fun getFavId(): List<Chapters>
+
 }
