@@ -63,10 +63,17 @@ class ChaptersViewModel(private val quranRoomDb: QuranRoomDb) : ViewModel() {
     }
 
 
+
     fun insertChapters(record: List<Chapters>){
             Log.d("Chapter View Model", "insert record size is ${record.size}")
              quranRoomDb.chaptersDao().addAllChapters(record)
     }
+
+    fun getAllFavChapters() {
+        val allFavId = quranRoomDb.chaptersDao().getFavId()
+        _data.postValue(allFavId)
+    }
+
 
     private fun onError(inputMessage: String?){
         val message = if (inputMessage.isNullOrBlank() or inputMessage.isNullOrEmpty()) "Unknown Error"

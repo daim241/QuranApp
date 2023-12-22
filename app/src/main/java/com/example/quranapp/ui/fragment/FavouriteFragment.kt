@@ -44,11 +44,11 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
         recyclerView.adapter = adapter
          }
 
+
     @SuppressLint("Range")
     private fun getData(): List<Chapters> {
         val tempChapterList = ArrayList<Chapters>()
-        context?.let { db ->
-            QuranRoomDb.getQuranDB(db).let {
+        context?.let { db -> QuranRoomDb.getQuranDB(db).let {
             val cursor = QuranRoomDb.getQuranDB(db)
             if (cursor != null) {
                 val chapList = cursor.chaptersDao().getFavId()
@@ -61,9 +61,15 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
     override fun onResume() {
         super.onResume()
         Log.d("Favorite Fragment", "This is fav onResume")
-        dataList.clear()
-        dataList.addAll(getData())
-        adapter.notifyDataSetChanged()}
+        viewModel.quranChap.observe(viewLifecycleOwner){ list->
+            dataList.clear()
+            viewModel.getAllFavChapters()
+            dataList.addAll(list)
+            adapter.notifyDataSetChanged()
+
+
+        }
+    }
 
     override fun onPause() {
         super.onPause()
@@ -97,8 +103,12 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
 
     fun updateList(){
         Log.d("Fav Fragment", "Func Called")
-        dataList.clear()
-        dataList.addAll(getData())
-        adapter.notifyDataSetChanged()
+        viewModel.quranChap.observe(viewLifecycleOwner){ favlist ->
+            Log.d("Chapter Fragment", "Data Cant Load ${favlist.size}")
+            dataList.clear()
+            viewModel.getAllFavChapters()
+            dataList.addAll(favlist)
+            adapter.notifyDataSetChanged()
+        }
     }
 }
