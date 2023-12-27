@@ -1,21 +1,24 @@
 package com.example.quranapp.data.viewModel
 
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.quranapp.data.api.ApiQuran
 import com.example.quranapp.data.api.QuranApiInterface
 import com.example.quranapp.data.database.QuranRoomDb
-import com.example.quranapp.data.model.Chapters
 import com.example.quranapp.data.model.Quran
 import com.example.quranapp.data.model.Verses
+import dagger.hilt.android.lifecycle.HiltViewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import javax.inject.Inject
 
-class SurahViewModel(private val quranRoomDb: QuranRoomDb,  chapId: String): ViewModel() {
+@HiltViewModel
+class SurahViewModel @Inject constructor(
+    private val quranRoomDb: QuranRoomDb,
+    private val quranApi: QuranApiInterface
+): ViewModel() {
     private val _data = MutableLiveData<List<Verses>>()
     val quranVerses: LiveData<List<Verses>> get() = _data
 
@@ -27,15 +30,10 @@ class SurahViewModel(private val quranRoomDb: QuranRoomDb,  chapId: String): Vie
 
     var errorMessage: String = ""
 
-    init {
-        localDB(chapId)
-    }
-
-    fun getVerses(chapId: String){
+    private fun getVerses(chapId: String){
         _isLoading.postValue(true)
         _isError.postValue(false)
-        val apiInterface = ApiQuran.getInstance().create(QuranApiInterface::class.java)
-        val call: Call<Quran> = apiInterface.getVersesapi(chapterNumber = chapId)
+        val call: Call<Quran> = quranApi.getVersesapi(chapterNumber = chapId)
         call.enqueue(object : Callback<Quran> {
             override fun onResponse(call: Call<Quran>, response: Response<Quran>) {
                 val responseBody = response.body()!!.verses
@@ -58,9 +56,9 @@ class SurahViewModel(private val quranRoomDb: QuranRoomDb,  chapId: String): Vie
         })
     }
 
-    private fun localDB(chapId: String){
+    fun localDB(chapId: String){
         val versesList = quranRoomDb.versesDao().getAllVersesData(chapId)
-        if (versesList != null){
+        if (versesList.isNotEmpty()){
             _data.postValue(versesList)
         }
         else{

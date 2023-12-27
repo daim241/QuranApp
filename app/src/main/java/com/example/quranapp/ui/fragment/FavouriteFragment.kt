@@ -1,23 +1,24 @@
 package com.example.quranapp.ui.fragment
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.quranapp.base.BaseFragment
-import com.example.quranapp.data.database.QuranRoomDb
 import com.example.quranapp.data.model.Chapters
 import com.example.quranapp.data.viewModel.ChaptersViewModel
 import com.example.quranapp.databinding.FragmentFavouriteBinding
 import com.example.quranapp.ui.adapter.ChaptersAdapter
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
-    private lateinit var viewModel: ChaptersViewModel
+    private val viewModel: ChaptersViewModel by viewModels()
     private var _binding: FragmentFavouriteBinding? = null
     private val binding get() = _binding!!
     val dataList = ArrayList<Chapters>()
@@ -25,7 +26,7 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
     lateinit var adapter: ChaptersAdapter
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-      viewModel = ChaptersViewModel(QuranRoomDb.getQuranDB(requireContext()))
+//      viewModel = ChaptersViewModel(QuranRoomDb.getQuranDB(requireContext()))
     }
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -38,37 +39,29 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        observeQuranList()
+
         recyclerView = binding.favRecView
         recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
         adapter = ChaptersAdapter(dataList, this@FavouriteFragment, requireContext())
         recyclerView.adapter = adapter
-         }
 
 
-    @SuppressLint("Range")
-    private fun getData(): List<Chapters> {
-        val tempChapterList = ArrayList<Chapters>()
-        context?.let { db -> QuranRoomDb.getQuranDB(db).let {
-            val cursor = QuranRoomDb.getQuranDB(db)
-            if (cursor != null) {
-                val chapList = cursor.chaptersDao().getFavId()
-                tempChapterList.addAll(chapList)}
-        }
-        }
-        return tempChapterList
     }
+
 
     override fun onResume() {
         super.onResume()
         Log.d("Favorite Fragment", "This is fav onResume")
-        viewModel.quranChap.observe(viewLifecycleOwner){ list->
-            dataList.clear()
-            viewModel.getAllFavChapters()
-            dataList.addAll(list)
-            adapter.notifyDataSetChanged()
+//        viewModel.quranChap.observe(viewLifecycleOwner){ list->
+//            dataList.clear()
+//            viewModel.getAllFavChapters()
+//            dataList.addAll(list)
+//            adapter.notifyDataSetChanged()
+//
+//        }
 
-
-        }
+        viewModel.getAllFavChapters()
     }
 
     override fun onPause() {
@@ -88,9 +81,8 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
         val action = HomeFragmentDirections.actionHomeFragmentToSurahFragment(position + 1)
         findNavController().navigate(action) }
     override fun onFavClickListener(position: Int) {
-        context?.let { fav ->
             dataList[position].fav_id = 0
-            QuranRoomDb.getQuranDB(fav).chaptersDao().updateChapters(dataList[position])
+            viewModel.updateChap(position)
             dataList.removeAt(position)
             adapter.notifyDataSetChanged()
             HomeFragment.childFragment?.fragments?.forEach {
@@ -98,17 +90,19 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
                     it.updateChapList()
                 }
             }
+    }
+
+    private fun observeQuranList() {
+        viewModel.quranChap.observe(viewLifecycleOwner){ favlist ->
+            Log.d("Fav Fragment", "Data Load size is  ${favlist.size}")
+            dataList.clear()
+            dataList.addAll(favlist)
+            adapter.notifyDataSetChanged()
         }
     }
 
     fun updateList(){
         Log.d("Fav Fragment", "Func Called")
-        viewModel.quranChap.observe(viewLifecycleOwner){ favlist ->
-            Log.d("Chapter Fragment", "Data Cant Load ${favlist.size}")
-            dataList.clear()
-            viewModel.getAllFavChapters()
-            dataList.addAll(favlist)
-            adapter.notifyDataSetChanged()
-        }
+        viewModel.getAllFavChapters()
     }
 }

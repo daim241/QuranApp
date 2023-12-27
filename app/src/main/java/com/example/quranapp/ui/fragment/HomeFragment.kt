@@ -2,13 +2,10 @@ package com.example.quranapp.ui.fragment
 
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.FragmentManager
-import androidx.viewpager.widget.ViewPager
-import com.example.quranapp.R
 import com.example.quranapp.base.BaseFragment
 import com.example.quranapp.databinding.FragmentHomeBinding
 import com.example.quranapp.ui.adapter.PagerAdapter
@@ -34,30 +31,6 @@ companion object{
         viewPager.adapter = PagerAdapter(childFragmentManager)
         val tabLayout = binding.tabLayout
         tabLayout.setupWithViewPager(viewPager)
-        viewPager.addOnPageChangeListener(object: ViewPager.OnPageChangeListener{
-            override fun onPageScrolled(
-                position: Int,
-                positionOffset: Float,
-                positionOffsetPixels: Int) {}
-
-            override fun onPageSelected(position: Int) {
-               Log.d("Home Fragment", "On Page Position $position")
-//                    childFragmentManager.fragments.forEach {
-//                        if (position == 1) {
-//                        if (it is FavouriteFragment)
-//                        {
-//                            it.updateList()
-//                        }
-//                    }
-//                        else{
-//                            if (it is ChapterFragment)
-//                            {
-//                                it.updateChapList()
-//                            }
-//                        }
-//                }
-            }
-            override fun onPageScrollStateChanged(state: Int) {} })
     }
 
     override fun onPause() {

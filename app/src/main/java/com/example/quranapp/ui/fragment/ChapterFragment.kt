@@ -7,19 +7,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.quranapp.base.BaseFragment
-import com.example.quranapp.data.database.QuranRoomDb
 import com.example.quranapp.data.model.Chapters
 import com.example.quranapp.data.viewModel.ChaptersViewModel
 import com.example.quranapp.databinding.FragmentChapterBinding
 import com.example.quranapp.ui.adapter.ChaptersAdapter
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class ChapterFragment : BaseFragment(), ChaptersAdapter.updateListener {
 
-    private lateinit var viewModel: ChaptersViewModel
+    private val viewModel: ChaptersViewModel by viewModels()
     private var _binding: FragmentChapterBinding? = null
     private val binding get() = _binding!!
     val dataList = ArrayList<Chapters>()
@@ -28,22 +30,7 @@ class ChapterFragment : BaseFragment(), ChaptersAdapter.updateListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel = ChaptersViewModel(QuranRoomDb.getQuranDB(requireContext()))
-    }
-
-    @SuppressLint("Range")
-    private fun getData(): List<Chapters> {
-        val tempChapterList = ArrayList<Chapters>()
-        context?.let { db ->
-            QuranRoomDb.getQuranDB(db).let {
-                val cursor = QuranRoomDb.getQuranDB(db)
-                if (cursor != null) {
-                    val chapList = cursor.chaptersDao().getAllChaptersData()
-                    tempChapterList.addAll(chapList)
-                }
-            }
-        }
-        return tempChapterList
+//        viewModel = ChaptersViewModel(QuranRoomDb.getQuranDB(requireContext()))
     }
 
 
@@ -65,21 +52,16 @@ class ChapterFragment : BaseFragment(), ChaptersAdapter.updateListener {
         adapter = ChaptersAdapter(dataList, this@ChapterFragment, requireContext())
         recyclerView.adapter = adapter
         Log.d("Service", "Data List: ${dataList.size}")
-        if (dataList.isEmpty()) {
-            if (getData().isNotEmpty()) {
-                viewModel.quranChap.observe(viewLifecycleOwner) { list ->
-                    Log.d("Chapter Fragment", "Data Cant Load ${list.size}")
-                    dataList.clear()
-                    dataList.addAll(list)
-                    adapter.notifyDataSetChanged()
-                }
-            } else {
-                viewModel.getChap()
-                adapter.notifyDataSetChanged()
-            }
+        if (dataList.isNotEmpty()) {
+            dataList.clear()
+            dataList.addAll(viewModel.quranChap.value!!)
+            adapter.notifyDataSetChanged()
+        } else {
+            viewModel.localDB()
         }
     }
 
+    @SuppressLint("SuspiciousIndentation")
     private fun getChap() {
         viewModel.isLoading.observe(viewLifecycleOwner){ it ->
             Log.d("Chapter Fragment", "isLoading $it")
@@ -92,11 +74,11 @@ class ChapterFragment : BaseFragment(), ChaptersAdapter.updateListener {
         viewModel.isError.observe(viewLifecycleOwner) {
             if (it)
                 Toast.makeText(requireContext(), "${viewModel.errorMessage}", Toast.LENGTH_SHORT).show()
-            Log.d("Chapter Fragment", "Data Can't Load")
+                Log.d("Chapter Fragment", "Data Can't Load")
 
         }
         viewModel.quranChap.observe(viewLifecycleOwner) { list ->
-            Log.d("Chapter Fragment", "Data Cant Load ${list.size}")
+            Log.d("Chapter Fragment", "Data Load size is ${list.size}")
             dataList.clear()
             dataList.addAll(list)
             adapter.notifyDataSetChanged()
@@ -110,7 +92,6 @@ class ChapterFragment : BaseFragment(), ChaptersAdapter.updateListener {
     }
 
     override fun onFavClickListener(position: Int) {
-        context?.let { fav ->
             val type = if (dataList[position].fav_id == 0) {
                 1
             } else {
@@ -118,13 +99,13 @@ class ChapterFragment : BaseFragment(), ChaptersAdapter.updateListener {
             }
             dataList[position].fav_id = type
             adapter.notifyDataSetChanged()
-            QuranRoomDb.getQuranDB(fav).chaptersDao().updateChapters(dataList[position])
+            viewModel.updateChap(type)
             HomeFragment.childFragment?.fragments?.forEach {
-                    if (it is FavouriteFragment) {
-                        it.updateList()
-                    }
+                if (it is FavouriteFragment) {
+                    it.updateList()
+                }
             }
-        }
+
     }
 
     override fun onResume() {
@@ -134,8 +115,6 @@ class ChapterFragment : BaseFragment(), ChaptersAdapter.updateListener {
 
     fun updateChapList(){
         Log.d("Chapter Fragment", "Update Chap List")
-        dataList.clear()
-        dataList.addAll(getData())
-        adapter.notifyDataSetChanged()
+        viewModel.localDB()
     }
 }

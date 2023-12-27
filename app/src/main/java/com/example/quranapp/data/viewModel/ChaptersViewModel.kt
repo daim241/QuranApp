@@ -4,16 +4,21 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.quranapp.data.api.ApiQuran
 import com.example.quranapp.data.api.QuranApiInterface
 import com.example.quranapp.data.database.QuranRoomDb
 import com.example.quranapp.data.model.Chapters
 import com.example.quranapp.data.model.Quran
+import dagger.hilt.android.lifecycle.HiltViewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import javax.inject.Inject
 
-class ChaptersViewModel(private val quranRoomDb: QuranRoomDb) : ViewModel() {
+@HiltViewModel
+class ChaptersViewModel @Inject constructor(
+    private val quranRoomDb: QuranRoomDb,
+    private val quranApi: QuranApiInterface
+) : ViewModel() {
     private val _data = MutableLiveData<List<Chapters>>()
     val quranChap: LiveData<List<Chapters>> get() = _data
 
@@ -25,14 +30,11 @@ class ChaptersViewModel(private val quranRoomDb: QuranRoomDb) : ViewModel() {
 
     var errorMessage: String = ""
 
-    init {
-        localDB()
-    }
-    fun getChap() {
+    private fun getChap() {
         _isLoading.postValue(true)
         _isError.postValue(false)
-        val apiInterface = ApiQuran.getInstance().create(QuranApiInterface::class.java)
-        val call: Call<Quran> = apiInterface.getApi(en = "")
+
+        val call: Call<Quran> = quranApi.getApi(en = "")
         call.enqueue(object : Callback<Quran> {
             override fun onResponse(call: Call<Quran>, response: Response<Quran>) {
                 val responseBody = response.body()!!.chapters
@@ -52,21 +54,18 @@ class ChaptersViewModel(private val quranRoomDb: QuranRoomDb) : ViewModel() {
         })
     }
 
-    private fun localDB(){
+    fun localDB(){
         val chapList = quranRoomDb.chaptersDao().getAllChaptersData()
-        if (chapList != null) {
+        if (chapList.isNotEmpty()) {
             _data.postValue(chapList)
-        }
-        else{
+        } else{
             getChap()
         }
     }
 
-
-
     fun insertChapters(record: List<Chapters>){
-            Log.d("Chapter View Model", "insert record size is ${record.size}")
-             quranRoomDb.chaptersDao().addAllChapters(record)
+        Log.d("Chapter View Model", "insert record size is ${record.size}")
+        quranRoomDb.chaptersDao().addAllChapters(record)
     }
 
     fun getAllFavChapters() {
@@ -74,6 +73,11 @@ class ChaptersViewModel(private val quranRoomDb: QuranRoomDb) : ViewModel() {
         _data.postValue(allFavId)
     }
 
+    fun updateChap(position: Int){
+        val chapId = quranRoomDb.chaptersDao().getAllChaptersData()
+       quranRoomDb.chaptersDao().updateChapters(chapId[position])
+
+    }
 
     private fun onError(inputMessage: String?){
         val message = if (inputMessage.isNullOrBlank() or inputMessage.isNullOrEmpty()) "Unknown Error"

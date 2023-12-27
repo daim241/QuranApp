@@ -9,28 +9,31 @@ import com.example.quranapp.data.database.dao.VersesDao
 import com.example.quranapp.data.model.Chapters
 import com.example.quranapp.data.model.Verses
 import com.example.quranapp.data.viewModel.ChaptersViewModel
+import dagger.Provides
 
 @Database(entities = [
     Chapters::class,
-Verses::class
-                     ], version = 1, exportSchema = false)
+Verses::class], version = 1, exportSchema = false)
 abstract class QuranRoomDb: RoomDatabase() {
+
+
 
     abstract fun chaptersDao(): ChapterDao
     abstract fun versesDao(): VersesDao
 
     companion object {
-        private var INSTANCE: QuranRoomDb? = null
-        fun getQuranDB(context: Context): QuranRoomDb {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    QuranRoomDb::class.java,
-                    "quran_app"
-                ).allowMainThreadQueries().build()
-                INSTANCE = instance
-                instance
-            }
-        }
+        const val dbName = "quran_app"
+//        private var INSTANCE: QuranRoomDb? = null
+//        fun getQuranDB(context: Context): QuranRoomDb {
+//            return INSTANCE ?: synchronized(this) {
+//                val instance = Room.databaseBuilder(
+//                    context.applicationContext,
+//                    QuranRoomDb::class.java,
+//                    "quran_app"
+//                ).allowMainThreadQueries().build()
+//                INSTANCE = instance
+//                instance
+//            }
+//        }
     }
 }

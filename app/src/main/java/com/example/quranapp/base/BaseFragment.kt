@@ -2,6 +2,8 @@ package com.example.quranapp.base
 
 import androidx.fragment.app.Fragment
 
+
+
 open class BaseFragment: Fragment() {
 
     fun dialogShow() {
