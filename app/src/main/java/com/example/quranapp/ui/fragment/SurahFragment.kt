@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.quranapp.base.BaseFragment
@@ -16,6 +17,7 @@ import com.example.quranapp.data.viewModel.SurahViewModel
 import com.example.quranapp.databinding.FragmentSurahBinding
 import com.example.quranapp.ui.adapter.SurahAdapter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class SurahFragment : BaseFragment() {
@@ -24,12 +26,7 @@ class SurahFragment : BaseFragment() {
     private val args: SurahFragmentArgs by navArgs()
     private val binding get() = _binding!!
     private var versesList = ArrayList<Verses>()
-    lateinit var adapter: SurahAdapter
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-//        viewModel = SurahViewModel(QuranRoomDb.getQuranDB(requireContext())) by viewModels()
-    }
+    private lateinit var adapter: SurahAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -42,20 +39,19 @@ class SurahFragment : BaseFragment() {
     @SuppressLint("SuspiciousIndentation")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        getVerses()
-        binding.versesRecView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-        adapter = SurahAdapter(versesList, this@SurahFragment, requireContext())
-        binding.versesRecView.adapter = adapter
-        Log.d("Service", "Verses List Size is: ${versesList.size} ")
-        if (versesList.isNotEmpty()){
-                    versesList.clear()
-                    versesList.addAll(viewModel.quranVerses.value!!)
-                    adapter.notifyDataSetChanged()
-        }
-        else {
-            viewModel.localDB(args.verses.toString())
-
-        }
+            getVerses()
+            binding.versesRecView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+            adapter = SurahAdapter(versesList, this@SurahFragment, requireContext())
+            binding.versesRecView.adapter = adapter
+            Log.d("Service", "Verses List Size is: ${versesList.size} ")
+            if (versesList.isNotEmpty()){
+                versesList.clear()
+                versesList.addAll(viewModel.quranVerses.value!!)
+                adapter.notifyDataSetChanged()
+            }
+            else {
+                viewModel.localDB(args.verses.toString())
+            }
     }
 
     private fun getVerses(){

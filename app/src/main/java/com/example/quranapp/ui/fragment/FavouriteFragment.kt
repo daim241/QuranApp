@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -15,19 +16,16 @@ import com.example.quranapp.data.viewModel.ChaptersViewModel
 import com.example.quranapp.databinding.FragmentFavouriteBinding
 import com.example.quranapp.ui.adapter.ChaptersAdapter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
     private val viewModel: ChaptersViewModel by viewModels()
     private var _binding: FragmentFavouriteBinding? = null
     private val binding get() = _binding!!
-    val dataList = ArrayList<Chapters>()
+    private val dataList = ArrayList<Chapters>()
     private lateinit var recyclerView: RecyclerView
-    lateinit var adapter: ChaptersAdapter
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-//      viewModel = ChaptersViewModel(QuranRoomDb.getQuranDB(requireContext()))
-    }
+    private lateinit var adapter: ChaptersAdapter
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -40,7 +38,6 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         observeQuranList()
-
         recyclerView = binding.favRecView
         recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
         adapter = ChaptersAdapter(dataList, this@FavouriteFragment, requireContext())
@@ -53,15 +50,8 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
     override fun onResume() {
         super.onResume()
         Log.d("Favorite Fragment", "This is fav onResume")
-//        viewModel.quranChap.observe(viewLifecycleOwner){ list->
-//            dataList.clear()
-//            viewModel.getAllFavChapters()
-//            dataList.addAll(list)
-//            adapter.notifyDataSetChanged()
-//
-//        }
-
         viewModel.getAllFavChapters()
+
     }
 
     override fun onPause() {
@@ -82,7 +72,7 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
         findNavController().navigate(action) }
     override fun onFavClickListener(position: Int) {
             dataList[position].fav_id = 0
-            viewModel.updateChap(position)
+            viewModel.updateChap(dataList[position])
             dataList.removeAt(position)
             adapter.notifyDataSetChanged()
             HomeFragment.childFragment?.fragments?.forEach {
@@ -104,5 +94,6 @@ class FavouriteFragment : BaseFragment(), ChaptersAdapter.updateListener {
     fun updateList(){
         Log.d("Fav Fragment", "Func Called")
         viewModel.getAllFavChapters()
+
     }
 }

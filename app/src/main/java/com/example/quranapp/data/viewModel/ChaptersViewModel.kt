@@ -1,14 +1,19 @@
 package com.example.quranapp.data.viewModel
 
+import android.icu.text.Transliterator.Position
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.quranapp.data.api.QuranApiInterface
 import com.example.quranapp.data.database.QuranRoomDb
 import com.example.quranapp.data.model.Chapters
 import com.example.quranapp.data.model.Quran
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -54,29 +59,35 @@ class ChaptersViewModel @Inject constructor(
         })
     }
 
-    fun localDB(){
-        val chapList = quranRoomDb.chaptersDao().getAllChaptersData()
-        if (chapList.isNotEmpty()) {
-            _data.postValue(chapList)
-        } else{
-            getChap()
+    fun localDB() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val chapList = quranRoomDb.chaptersDao().getAllChaptersData()
+            if (chapList.isNotEmpty()) {
+                _data.postValue(chapList)
+            } else{
+                getChap()
+            }
         }
     }
 
     fun insertChapters(record: List<Chapters>){
-        Log.d("Chapter View Model", "insert record size is ${record.size}")
-        quranRoomDb.chaptersDao().addAllChapters(record)
+        viewModelScope.launch(Dispatchers.IO) {
+            Log.d("Chapter View Model", "insert record size is ${record.size}")
+            quranRoomDb.chaptersDao().addAllChapters(record)
+        }
     }
 
     fun getAllFavChapters() {
-        val allFavId = quranRoomDb.chaptersDao().getFavId()
-        _data.postValue(allFavId)
+        viewModelScope.launch(Dispatchers.IO){
+            val allFavId = quranRoomDb.chaptersDao().getFavId()
+            _data.postValue(allFavId)
+        }
     }
 
-    fun updateChap(position: Int){
-        val chapId = quranRoomDb.chaptersDao().getAllChaptersData()
-       quranRoomDb.chaptersDao().updateChapters(chapId[position])
-
+    fun updateChap(chapters: Chapters){
+        viewModelScope.launch(Dispatchers.IO){
+            quranRoomDb.chaptersDao().updateChapters(chapters)
+        }
     }
 
     private fun onError(inputMessage: String?){

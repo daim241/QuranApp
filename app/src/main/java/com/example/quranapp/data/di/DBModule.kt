@@ -19,7 +19,6 @@ object DBModule {
     fun provideQuranDb(@ApplicationContext appCotext: Context): QuranRoomDb {
         return Room.databaseBuilder(appCotext, QuranRoomDb::class.java, QuranRoomDb.dbName)
             .fallbackToDestructiveMigration()
-            .allowMainThreadQueries()
             .build()
     }
 

@@ -4,11 +4,15 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.quranapp.data.api.QuranApiInterface
 import com.example.quranapp.data.database.QuranRoomDb
 import com.example.quranapp.data.model.Quran
 import com.example.quranapp.data.model.Verses
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -57,18 +61,23 @@ class SurahViewModel @Inject constructor(
     }
 
     fun localDB(chapId: String){
-        val versesList = quranRoomDb.versesDao().getAllVersesData(chapId)
-        if (versesList.isNotEmpty()){
-            _data.postValue(versesList)
+        viewModelScope.launch(Dispatchers.IO) {
+            val versesList = quranRoomDb.versesDao().getAllVersesData(chapId)
+            if (versesList.isNotEmpty()){
+                _data.postValue(versesList)
+            }
+            else{
+                getVerses(chapId)
+            }
         }
-        else{
-            getVerses(chapId)
-        }
+
     }
 
     fun insertVerses(record: List<Verses>){
-        Log.d("Chap View Model", "insert record size is ${record.size}")
-        quranRoomDb.versesDao().insertVerse(record)
+        viewModelScope.launch(Dispatchers.IO) {
+            Log.d("Chap View Model", "insert record size is ${record.size}")
+            quranRoomDb.versesDao().insertVerse(record)
+        }
     }
 
     private fun onError(inputMessage: String?){
